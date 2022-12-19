@@ -7,10 +7,12 @@ class Direction(Enum):
     W = 4
 
 class Robot:
-    def __init__(self, x, y, direction):
+    def __init__(self, x, y, direction, grid):
         self.x = x
         self.y = y
         self.direction = direction
+        if not (0 <= self.x < len(grid) and 0 <= self.y < len(grid[0])):
+            raise ValueError(f"({self.x}, {self.y}) is an invalid location to launch robot.")
 
         
     def __repr__(self):
@@ -18,7 +20,6 @@ class Robot:
 
     def move_forward(self):
         direction = Direction[self.direction]
-        print(direction, "fish")
         if direction == Direction.N:
             self.y += 1
         elif direction == Direction.E:

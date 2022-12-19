@@ -1,17 +1,20 @@
 # Specify the target to build
+
 all: setup test
 
 .PHONY: setup test venv
 
+PYTHONPATH:= ./src
+export PYTHONPATH
+
 venv:
 	python3 -m venv venv
 	source venv/bin/activate
-	export PYTHONPATH=$src
 
 # Install dependencies
 setup:
-	pip3 install -r requirements.txt
+	pip install -r requirements.txt
 
 # Run pytests
 test:
-	python3 -m pytest
+	python3 -m pytest test/

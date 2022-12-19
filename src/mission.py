@@ -1,85 +1,107 @@
 import re
 from robot import Robot
+import warnings
 
-class Mission:
-    def __init__(self, input):
-        self.instructions = input.strip().split("\n")
+def launch_mission(input):
+    instructions = input.strip().split("\n")
     
-    def mission_commence(self):
-        grid_dimension = self.instructions[0]
-        grid = self.initialise_grid(grid_dimension)
-        
-        robot_commands = self.instructions[1:]
-        result = self.get_final_positions(robot_commands, grid)
-        return result
+    grid_dimension = instructions[0]   
+    grid = initialise_grid(grid_dimension)
+    print(grid)
     
-    def initialise_grid(self, grid_dimension):
-        # split the input string into lines
-        lines = grid_dimension.strip().split("\n")
+    mission_commands = instructions[1:]
+    final_positions = get_final_positions(mission_commands, grid)
+    return "The results are:\n" + "\n".join(final_positions)
 
-        # parse the grid size from the first line
-        m, n = map(int, lines[0].split())
+def initialise_grid(grid_dimension):
+    # split the input string into lines
+    lines = grid_dimension.strip().split("\n")
 
-        # initialize the grid with a default value
-        grid = [[None for _ in range(n)] for _ in range(m)]
-        
-        if len(grid) == 0 or len(grid[0]) == 0:
-            raise ValueError(f"Grid dimension must be non-zero")
-        return grid
-        # iterate over the remaining lines
-        
-    def get_final_positions(self, mission_commands, grid):
-        final_positions = []
+    # parse the grid size from the first line
+    m, n = map(int, lines[0].split())
 
-        for command in mission_commands:
-            # split the line into the initial position and actions
-            initial_pos, actions = command.rsplit(" ", 1)
-            # parse the initial position
-            x, y, orientation = initial_pos[1:-1].split(", ")
-            x, y = int(x), int(y)
-            orientation = orientation.upper()
+    # initialize the grid with a default value
+    grid = [[None for _ in range(n)] for _ in range(m)]
+    
+    if len(grid) == 0 or len(grid[0]) == 0:
+        raise ValueError(f"Grid dimension must be greater than 0")
+    return grid
 
-            # create a robot with the initial position and direction
-            robot = Robot(x, y, orientation)
+def move_robot(robot, actions, grid):
+    for action in actions:
+        if not (0 <= robot.x < len(grid) and 0 <= robot.y < len(grid[0])):
+            if not 0 <= robot.x < len(grid):
+                x_bounds = [0, len(grid)]
+                robot.x = min(x_bounds, key=lambda x:abs(x-robot.x))
+                return f"({robot.x}, {robot.y}, {robot.direction}) LOST"
+            elif not 0 <= robot.y < len(grid[0]):
+                y_bounds = [0, len(grid[0])]
+                robot.y = min(y_bounds, key=lambda y:abs(y-robot.y))
+                return f"({robot.x}, {robot.y}, {robot.direction}) LOST"
+        if action == "F":
+            robot.move_forward()
+        elif action == "L":
+            robot.rotate_left()
+        elif action == "R":
+            robot.rotate_right()
+        else:
+            raise ValueError(f"Robot cannot comprehend your command :( {action}")
+    return f"({robot.x}, {robot.y}, {robot.direction})"
 
-            # move the robot according to the actions
-            self.move_robot(robot, actions)
+def get_final_positions(mission_commands, grid):
+    final_positions = []
 
-            # check if the robot is lost
-            if not (0 <= robot.x < len(grid) and 0 <= robot.y < len(grid[0])):
-            # mark the grid cell as lost
-                grid[x][y] = "LOST"
-                final_positions.append(f"{robot.x} {robot.y} {robot.direction} LOST")
-            else:
-                final_positions.append(f"{robot.x} {robot.y} {robot.direction}")
+    for command in mission_commands:
+        # split the line into the initial position and actions
+        initial_pos, actions = command.rsplit(" ", 1)
 
-        return final_positions
+        # parse the initial position
+        x, y, orientation = initial_pos[1:-1].split(", ")
+        x, y = int(x), int(y)
+        orientation = orientation.upper()
 
-    def move_robot(self, robot, actions):
-        for action in actions:
-            if action == "F":
-                robot.move_forward()
-            elif action == "L":
-                robot.rotate_left()
-            elif action == "R":
-                robot.rotate_right()
-            else:
-                raise ValueError(f"Robot cannot comprehend your command :( {action}")
+        # create a robot with the initial position and direction
+        robot = Robot(x, y, orientation, grid)
+
+        # move the robot according to the actions
+        robot_destination = move_robot(robot, actions, grid)
+
+        final_positions.append(robot_destination)
+    return final_positions
+
+
     
 
 # example input
-# input_str = """
-# 4 8
-# (2, 3, N) FLLFR
-# """
-
 input_str = """
-0 1
+4 8
 (2, 3, N) FLLFR
+(1, 0, S) FFRLF
 """
-# execute the commands for the robots
-final_countdown = Mission(input_str)
-final_countdown.mission_commence()
 
-# print the final positions
-# print(final_positions)
+input_str_2 = """
+4 8
+(0, 4, E) LFRFF
+(0, 2, N) FFLFRFF
+"""
+
+# execute the commands for the robots
+final_countdown = launch_mission(input_str_2)
+print(final_countdown)
+
+# alternatively prompt for user input
+# def main():
+#   user_input = ""
+#   while True:
+#       line = input("Please enter robot coordinates and commands:")
+#       if line:
+#           user_input += line + "\n"
+#       else:
+#           break
+
+#   print(f'You entered: {user_input}')
+#   results = launch_mission(user_input)
+#   print(results)
+
+# if __name__ == '__main__':
+#   main()
